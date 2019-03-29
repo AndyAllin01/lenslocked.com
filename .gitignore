@@ -2,3 +2,6 @@
 
 #don't include executables
 *.exe
+
+/ignore subdirectories
+**/exp/*
