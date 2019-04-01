@@ -5,4 +5,4 @@
 
 /ignore subdirectories
 **/exp/*
-**/views/*
+#**/views/*
