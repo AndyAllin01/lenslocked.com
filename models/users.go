@@ -18,7 +18,7 @@ func NewUserService(connectionInfo string) (*UserService, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
+	db.LogMode(true)
 	return &UserService{
 		db: db,
 	}, nil
@@ -53,6 +53,7 @@ func (us *UserService) Close() error {
 
 //DestructiveReset drops users table and rebuilds it
 func (us *UserService) DestructiveReset() {
+	fmt.Println("DESTRUCTIVE RESET")
 	us.db.DropTableIfExists(&User{})
 	us.db.AutoMigrate(&User{})
 }
