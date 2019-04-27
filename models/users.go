@@ -4,6 +4,10 @@ import (
 	"errors"
 	"fmt"
 
+	"lenslocked.com/rand"
+
+	"lenslocked.com/hash"
+
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/jinzhu/gorm"
@@ -18,6 +22,7 @@ var (
 )
 
 const userPwPepper = "secret-random-string-this-project"
+const hmacSecretKey = "secret-hmac-key"
 
 func NewUserService(connectionInfo string) (*UserService, error) {
 	fmt.Println("CONN INFO ", connectionInfo)
@@ -26,14 +31,17 @@ func NewUserService(connectionInfo string) (*UserService, error) {
 		return nil, err
 	}
 	db.LogMode(true)
+	hmac := hash.NewHMAC(hmacSecretKey)
 	return &UserService{
-		db: db,
+		db:   db,
+		hmac: hmac,
 	}, nil
 
 }
 
 type UserService struct {
-	db *gorm.DB
+	db   *gorm.DB
+	hmac hash.HMAC
 }
 
 //ByID looks up user by provided ID
@@ -53,6 +61,20 @@ func (us *UserService) ByEmail(email string) (*User, error) {
 	db := us.db.Where("email = ?", email)
 	err := first(db, &user)
 	return &user, err
+}
+
+//ByRemember looks up a user by remember token and returns that user
+//this handles hashing of the token
+func (us *UserService) ByRemember(token string) (*User, error) {
+	var user User
+
+	rememberHash := us.hmac.Hash(token)
+
+	err := first(us.db.Where("remember_hash = ?", rememberHash), &user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 //Authenticate chceks password is correct for specified email address
@@ -96,13 +118,24 @@ func (us *UserService) Create(user *User) error {
 	//	fmt.Println("UPDATE ", user.Password, hashedBytes)
 	user.PasswordHash = string(hashedBytes)
 	user.Password = ""
-	//	fmt.Println(user)
+
+	if user.Remember == "" {
+		token, err := rand.RememberToken()
+		if err != nil {
+			return err
+		}
+		user.Remember = token
+	}
+
 	return us.db.Create(user).Error
 	//	return nil
 }
 
 //Update the provided user with all data in the provided user object
 func (us *UserService) Update(user *User) error {
+	if user.Remember != "" {
+		user.RememberHash = us.hmac.Hash(user.Remember)
+	}
 	return us.db.Save(user).Error
 }
 
@@ -143,4 +176,6 @@ type User struct {
 	Email        string `gorm:"not null;unique_index"`
 	Password     string `gorm: "-"`
 	PasswordHash string `gorm:"not null"`
+	Remember     string `gorm: "-"`
+	RememberHash string `gorm:"not null;unique_index"`
 }
