@@ -114,14 +114,7 @@ type UserValidator struct {
 //Create creates provided user and backfills
 //system fields
 func (uv *UserValidator) Create(user *User) error {
-	if user.Remember == "" {
-		token, err := rand.RememberToken()
-		if err != nil {
-			return err
-		}
-		user.Remember = token
-	}
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember)
+	err := runUserValFuncs(user, uv.bcryptPassword, uv.setRememberIfUnset, uv.hmacRemember)
 	if err != nil {
 		return err
 	}
@@ -179,6 +172,20 @@ func (uv *UserValidator) hmacRemember(user *User) error {
 		return nil
 	}
 	user.RememberHash = uv.hmac.Hash(user.Remember)
+	return nil
+}
+
+func (uv *UserValidator) setRememberIfUnset(user *User) error {
+
+	if user.Remember != nil {
+		return err
+	}
+
+	token, err := rand.RememberToken()
+	if err != nil {
+		return err
+	}
+	user.Remember = token
 	return nil
 }
 
