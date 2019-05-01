@@ -145,8 +145,11 @@ func (uv *UserValidator) Update(user *User) error {
 
 //Delete a specified user
 func (uv *UserValidator) Delete(id uint) error {
-	if id == 0 {
-		return ErrInvalidID
+	var user User
+	user.ID = id
+	err := runUserValFuncs(&user, uv.idGreaterThanZero)
+	if err != nil {
+		return err
 	}
 	return uv.UserDB.Delete(id)
 }
@@ -177,8 +180,8 @@ func (uv *UserValidator) hmacRemember(user *User) error {
 
 func (uv *UserValidator) setRememberIfUnset(user *User) error {
 
-	if user.Remember != nil {
-		return err
+	if user.Remember != "" {
+		return nil
 	}
 
 	token, err := rand.RememberToken()
@@ -186,6 +189,13 @@ func (uv *UserValidator) setRememberIfUnset(user *User) error {
 		return err
 	}
 	user.Remember = token
+	return nil
+}
+
+func (uv *UserValidator) idGreaterThanZero(user *User) error {
+	if user.ID <= 0 {
+		return ErrInvalidID
+	}
 	return nil
 }
 
