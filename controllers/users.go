@@ -41,11 +41,23 @@ func (u *Users) New(w http.ResponseWriter, r *http.Request) {
 		Level   string
 		Message string
 	}
+
+	type Data struct {
+		Alert Alert
+		Yield interface{}
+	}
+
 	a := Alert{
 		Level:   "success",
 		Message: "is this working?",
 	}
-	if err := u.NewView.Render(w, a); err != nil {
+
+	d := Data{
+		Alert: a,
+		Yield: "MESSAGE !!!",
+	}
+
+	if err := u.NewView.Render(w, d); err != nil {
 		panic(err)
 	}
 }
