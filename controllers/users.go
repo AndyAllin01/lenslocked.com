@@ -37,7 +37,15 @@ type SignupForm struct {
 //New renders form for new user account
 //GET/signup
 func (u *Users) New(w http.ResponseWriter, r *http.Request) {
-	if err := u.NewView.Render(w, nil); err != nil {
+	type Alert struct {
+		Level   string
+		Message string
+	}
+	a := Alert{
+		Level:   "success",
+		Message: "is this working?",
+	}
+	if err := u.NewView.Render(w, a); err != nil {
 		panic(err)
 	}
 }
