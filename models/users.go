@@ -26,6 +26,9 @@ var (
 	ErrEmailTaken        = errors.New("models: email address is already taken")
 	ErrPasswordTooShort  = errors.New("models: password must be at least 8 characters")
 	ErrPasswordRequired  = errors.New("models: password is required")
+	ErrRememberTooShort  = errors.New("models: remember token must be at least 32 bytes")
+	ErrRememberRequired  = errors.New("models: invlid remember token hassh")
+
 )
 
 const userPwPepper = "secret-random-string-this-project"
@@ -146,7 +149,9 @@ func (uv *UserValidator) Create(user *User) error {
 		uv.bcryptPassword,
 		uv.passwordHashRequired,
 		uv.setRememberIfUnset,
+		uv.rememberMinBytes,
 		uv.hmacRemember,
+		uv.rememberHashRequired,
 		uv.normalizeEmail,
 		uv.requireEmail,
 		uv.emailFormat,
@@ -176,7 +181,9 @@ func (uv *UserValidator) Update(user *User) error {
 		uv.passwordMinLength,
 		uv.bcryptPassword,
 		uv.passwordHashRequired,
+		uv.rememberMinBytes,
 		uv.hmacRemember,
+		uv.rememberHashRequired,
 		uv.normalizeEmail,
 		uv.requireEmail,
 		uv.emailFormat,
@@ -223,16 +230,35 @@ func (uv *UserValidator) hmacRemember(user *User) error {
 }
 
 func (uv *UserValidator) setRememberIfUnset(user *User) error {
-
 	if user.Remember != "" {
 		return nil
 	}
-
 	token, err := rand.RememberToken()
 	if err != nil {
 		return err
 	}
 	user.Remember = token
+	return nil
+}
+
+func (uv *UserValidator) rememberMinBytes(user *User) error {
+	if user.Remember == "" {
+		return nil
+	}
+	n, err := rand.NBytes(user.Remember)
+	if err != nil {
+		return err
+	}
+	if n < 32 {
+		return ErrRememberTooShort
+	}
+	return nil
+}
+
+func (uv *UserValidator) rememberHashRequired(user *User) error {
+	if user.RememberHash == "" {
+		return ErrRememberRequired
+	}
 	return nil
 }
 
