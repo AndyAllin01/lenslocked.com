@@ -3,6 +3,8 @@ package models
 import (
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"lenslocked.com/rand"
 
@@ -19,6 +21,9 @@ var (
 	ErrInvalidID       = errors.New("models: ID provided invalid")
 	ErrInvalidEmail    = errors.New("models: incorrect email provided")
 	ErrInvalidPassword = errors.New("models: incorrect password provided")
+	ErrEmailRequired   = errors.New("Email address is required")
+	ErrEmailInvalid    = errors.New("Email address is not valid")
+	ErrEmailTaken      = errors.New("models: email address is already taken")
 )
 
 const userPwPepper = "secret-random-string-this-project"
@@ -70,10 +75,7 @@ func NewUserService(connectionInfo string) (UserService, error) {
 	}
 
 	hmac := hash.NewHMAC(hmacSecretKey)
-	uv := &UserValidator{
-		hmac:   hmac,
-		UserDB: ug,
-	}
+	uv := newUserValidator(ug, hmac)
 	return &userService{
 		UserDB: uv,
 	}, nil
@@ -106,15 +108,44 @@ func (us *userService) Authenticate(email, password string) (*User, error) {
 
 var _ UserDB = &UserValidator{}
 
+func newUserValidator(udb UserDB, hmac hash.HMAC) *UserValidator {
+	return &UserValidator{
+		UserDB: udb,
+		hmac:   hmac,
+		//email matching regexp           bob99bob      @ email01     . com
+		emailRegex: regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,16}$`),
+	}
+}
+
 type UserValidator struct {
 	UserDB
-	hmac hash.HMAC
+	hmac       hash.HMAC
+	emailRegex *regexp.Regexp
+}
+
+//ByEmail normalizes the email address before calling  ByEmail
+//on the UserDB field
+func (uv *UserValidator) ByEmail(email string) (*User, error) {
+	user := User{
+		Email: email,
+	}
+	if err := runUserValFuncs(&user, uv.normalizeEmail); err != nil {
+		return nil, err
+	}
+	return uv.UserDB.ByEmail(user.Email)
 }
 
 //Create creates provided user and backfills
 //system fields
 func (uv *UserValidator) Create(user *User) error {
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.setRememberIfUnset, uv.hmacRemember)
+	err := runUserValFuncs(user,
+		uv.bcryptPassword,
+		uv.setRememberIfUnset,
+		uv.hmacRemember,
+		uv.normalizeEmail,
+		uv.requireEmail,
+		uv.emailFormat,
+		uv.emailIsAvailable)
 	if err != nil {
 		return err
 	}
@@ -136,7 +167,13 @@ func runUserValFuncs(user *User, fns ...userValFunc) error {
 
 //Update will hash a remember token if provided
 func (uv *UserValidator) Update(user *User) error {
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember)
+	err := runUserValFuncs(user,
+		uv.bcryptPassword,
+		uv.hmacRemember,
+		uv.normalizeEmail,
+		uv.requireEmail,
+		uv.emailFormat,
+		uv.emailIsAvailable)
 	if err != nil {
 		return err
 	}
@@ -195,6 +232,43 @@ func (uv *UserValidator) setRememberIfUnset(user *User) error {
 func (uv *UserValidator) idGreaterThanZero(user *User) error {
 	if user.ID <= 0 {
 		return ErrInvalidID
+	}
+	return nil
+}
+
+//normalizeEmail removes spaces and sets email to lower case
+func (uv *UserValidator) normalizeEmail(user *User) error {
+	user.Email = strings.ToLower(user.Email)
+	user.Email = strings.TrimSpace(user.Email)
+	return nil
+}
+
+func (uv *UserValidator) requireEmail(user *User) error {
+	if user.Email == "" {
+		return ErrEmailRequired
+	}
+	return nil
+}
+
+func (uv *UserValidator) emailFormat(user *User) error {
+	if !uv.emailRegex.MatchString(user.Email) {
+		return ErrEmailInvalid
+	}
+	return nil
+}
+
+func (uv *UserValidator) emailIsAvailable(user *User) error {
+	existing, err := uv.ByEmail(user.Email)
+	if err == ErrNotFound {
+		return nil // email IS available
+	}
+
+	if err != nil {
+		return err
+	}
+	//user found! If it has same id as this user, it is an update
+	if user.ID != existing.ID {
+		return ErrEmailTaken
 	}
 	return nil
 }
