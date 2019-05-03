@@ -37,26 +37,13 @@ type SignupForm struct {
 //New renders form for new user account
 //GET/signup
 func (u *Users) New(w http.ResponseWriter, r *http.Request) {
-	type Alert struct {
-		Level   string
-		Message string
+	d:=views.Data{
+		Alert: &views.Alert{
+			Level: views.AlertLvlError,
+			Message: "ooooops!",
+		},
+		Yield: "Test yield!!!",
 	}
-
-	type Data struct {
-		Alert Alert
-		Yield interface{}
-	}
-
-	a := Alert{
-		Level:   "success",
-		Message: "is this working?",
-	}
-
-	d := Data{
-		Alert: a,
-		Yield: "MESSAGE !!!",
-	}
-
 	if err := u.NewView.Render(w, d); err != nil {
 		panic(err)
 	}
