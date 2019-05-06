@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -14,21 +13,6 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-)
-
-var (
-	ErrNotFound          = errors.New("models: resource not found")
-	ErrIDInvalid         = errors.New("models: ID provided invalid")
-	ErrInvalidEmail      = errors.New("models: incorrect email provided")
-	ErrPasswordIncorrect = errors.New("models: incorrect password provided")
-	ErrEmailRequired     = errors.New("Email address is required")
-	ErrEmailInvalid      = errors.New("Email address is not valid")
-	ErrEmailTaken        = errors.New("models: email address is already taken")
-	ErrPasswordTooShort  = errors.New("models: password must be at least 8 characters")
-	ErrPasswordRequired  = errors.New("models: password is required")
-	ErrRememberTooShort  = errors.New("models: remember token must be at least 32 bytes")
-	ErrRememberRequired  = errors.New("models: invlid remember token hassh")
-
 )
 
 const userPwPepper = "secret-random-string-this-project"
