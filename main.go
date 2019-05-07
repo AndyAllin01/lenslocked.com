@@ -24,13 +24,14 @@ func main() {
 
 	psqlInfo := "postgres://bond:password@localhost/lenslocked_dev?sslmode=disable"
 
-	us, err := models.NewUserService(psqlInfo)
+	services, err := models.NewServices(psqlInfo)
 	must(err)
-	defer us.Close()
-	us.AutoMigrate()
+	//TODO - fix this
+	//	defer us.Close()
+	//	us.AutoMigrate()
 	//us.DestructiveReset()
 	staticC := controllers.NewStatic()
-	usersC := controllers.NewUsers(us)
+	usersC := controllers.NewUsers(services.User)
 
 	r := mux.NewRouter()
 	r.Handle("/", staticC.Home).Methods("GET")
