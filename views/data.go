@@ -36,6 +36,13 @@ func (d *Data) SetAlert(err error) {
 	}
 }
 
+func (d *Data) AlertError(msg string) {
+	d.Alert = &Alert{
+		Level:   AlertLvlError,
+		Message: msg,
+	}
+}
+
 type PublicError interface {
 	error
 	Public() string
