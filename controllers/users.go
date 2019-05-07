@@ -38,9 +38,7 @@ type SignupForm struct {
 //New renders form for new user account
 //GET/signup
 func (u *Users) New(w http.ResponseWriter, r *http.Request) {
-	if err := u.NewView.Render(w, nil); err != nil {
-		panic(err)
-	}
+	u.NewView.Render(w, nil)
 }
 
 //Create processes the signup form when submitted.
