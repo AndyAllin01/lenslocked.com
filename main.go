@@ -45,6 +45,7 @@ func main() {
 	r.HandleFunc("/cookietest", usersC.CookieTest).Methods("GET")
 	//gallery routes
 	r.Handle("/galleries/new", galleriesC.New).Methods("GET")
+	r.HandleFunc("/galleries", galleriesC.Create).Methods("POST")
 	fmt.Println("STARTING SERVER ######")
 	http.ListenAndServe(":8080", r)
 }
