@@ -32,6 +32,7 @@ func main() {
 	//services.DestructiveReset()
 	staticC := controllers.NewStatic()
 	usersC := controllers.NewUsers(services.User)
+	galleriesC := controllers.NewGalleries(services.Gallery)
 
 	r := mux.NewRouter()
 	r.Handle("/", staticC.Home).Methods("GET")
@@ -42,6 +43,8 @@ func main() {
 	r.Handle("/login", usersC.LoginView).Methods("GET")
 	r.HandleFunc("/login", usersC.Login).Methods("POST")
 	r.HandleFunc("/cookietest", usersC.CookieTest).Methods("GET")
+	//gallery routes
+	r.Handle("/galleries/new", galleriesC.New).Methods("GET")
 	fmt.Println("STARTING SERVER ######")
 	http.ListenAndServe(":8080", r)
 }
