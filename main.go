@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"lenslocked.com/middleware"
+
 	"lenslocked.com/models"
 
 	"lenslocked.com/controllers"
@@ -33,6 +35,9 @@ func main() {
 	staticC := controllers.NewStatic()
 	usersC := controllers.NewUsers(services.User)
 	galleriesC := controllers.NewGalleries(services.Gallery)
+	requireUserMw := middleware.RequireUser{
+		UserService: services.User,
+	}
 
 	r := mux.NewRouter()
 	r.Handle("/", staticC.Home).Methods("GET")
@@ -44,8 +49,8 @@ func main() {
 	r.HandleFunc("/login", usersC.Login).Methods("POST")
 	r.HandleFunc("/cookietest", usersC.CookieTest).Methods("GET")
 	//gallery routes
-	r.Handle("/galleries/new", galleriesC.New).Methods("GET")
-	r.HandleFunc("/galleries", galleriesC.Create).Methods("POST")
+	r.Handle("/galleries/new", requireUserMw.Apply(galleriesC.New)).Methods("GET")
+	r.HandleFunc("/galleries", requireUserMw.ApplyFn(galleriesC.Create)).Methods("POST")
 	fmt.Println("STARTING SERVER ######")
 	http.ListenAndServe(":8080", r)
 }
