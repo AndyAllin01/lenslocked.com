@@ -1,6 +1,10 @@
 package models
 
-import "github.com/jinzhu/gorm"
+import (
+	"fmt"
+
+	"github.com/jinzhu/gorm"
+)
 
 func NewServices(connectionInfo string) (*Services, error) {
 	db, err := gorm.Open("postgres", connectionInfo)
@@ -10,10 +14,32 @@ func NewServices(connectionInfo string) (*Services, error) {
 	db.LogMode(true)
 	return &Services{
 		User: NewUserService(db),
+		db:   db,
 	}, nil
 }
 
 type Services struct {
 	Gallery GalleryService
 	User    UserService
+	db      *gorm.DB
+}
+
+//Closes DB connection
+func (s *Services) Close() error {
+	return s.db.Close()
+}
+
+//DestructiveReset drops all tables and rebuilds them
+func (s *Services) DestructiveReset() error {
+	err := s.db.DropTableIfExists(&User{}, &Gallery{}).Error
+	if err != nil {
+		return err
+	}
+	fmt.Println("AUTOMIGRATE")
+	return s.AutoMigrate()
+}
+
+//Attempt to automatically migrate the all tables
+func (s *Services) AutoMigrate() error {
+	return s.db.AutoMigrate(&User{}, &Gallery{}).Error
 }
