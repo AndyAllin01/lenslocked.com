@@ -51,6 +51,7 @@ func main() {
 	//gallery routes
 	r.Handle("/galleries/new", requireUserMw.Apply(galleriesC.New)).Methods("GET")
 	r.HandleFunc("/galleries", requireUserMw.ApplyFn(galleriesC.Create)).Methods("POST")
+	//r.Handle("/galleries", requireUserMw.ApplyFn(galleriesC.Create)).Methods("POST")
 	fmt.Println("STARTING SERVER ######")
 	http.ListenAndServe(":8080", r)
 }
