@@ -16,6 +16,7 @@ import (
 
 const (
 	ShowGallery = "show_gallery"
+	EditGallery = "edit_gallery"
 )
 
 //NewUsers creates a newusers controller
@@ -23,24 +24,41 @@ const (
 //during setup
 func NewGalleries(gs models.GalleryService, r *mux.Router) *Galleries {
 	return &Galleries{
-		New:      views.NewView("bootstrap", "galleries/new"),
-		ShowView: views.NewView("bootstrap", "galleries/show"),
-		EditView: views.NewView("bootstrap", "galleries/edit"),
-		gs:       gs,
-		r:        r,
+		New:       views.NewView("bootstrap", "galleries/new"),
+		ShowView:  views.NewView("bootstrap", "galleries/show"),
+		EditView:  views.NewView("bootstrap", "galleries/edit"),
+		IndexView: views.NewView("bootstrap", "galleries/index"),
+		gs:        gs,
+		r:         r,
 	}
 }
 
 type Galleries struct {
-	New      *views.View
-	ShowView *views.View
-	EditView *views.View
-	gs       models.GalleryService
-	r        *mux.Router
+	New       *views.View
+	ShowView  *views.View
+	EditView  *views.View
+	IndexView *views.View
+	gs        models.GalleryService
+	r         *mux.Router
 }
 
 type GalleryForm struct {
 	Title string `schema: "title"`
+}
+
+//GET/galleries
+func (g *Galleries) Index(w http.ResponseWriter, r *http.Request) {
+	user := context.User(r.Context())
+	galleries, err := g.gs.ByUserID(user.ID)
+	if err != nil {
+		http.Error(w, "No gallery for this user", http.StatusInternalServerError)
+	}
+
+	var vd views.Data
+	vd.Yield = galleries
+	//	fmt.Fprintln(w, galleries)
+	g.IndexView.Render(w, vd)
+
 }
 
 //GET/gallerries/:id
@@ -142,7 +160,7 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request) {
 		g.New.Render(w, vd)
 		return
 	}
-	url, err := g.r.Get(ShowGallery).URL("id", fmt.Sprintf("%v", gallery.ID))
+	url, err := g.r.Get(EditGallery).URL("id", fmt.Sprintf("%v", gallery.ID))
 	if err != nil {
 		//find an appropriate action here
 		http.Redirect(w, r, "/", http.StatusFound)
@@ -173,7 +191,7 @@ func (g *Galleries) Delete(w http.ResponseWriter, r *http.Request) {
 		g.EditView.Render(w, vd)
 		return
 	}
-	fmt.Fprintln(w, "gallery deleted")
+	http.Redirect(w, r, "/galleries", http.StatusFound)
 }
 
 func (g *Galleries) galleryByID(w http.ResponseWriter, r *http.Request) (*models.Gallery, error) {
