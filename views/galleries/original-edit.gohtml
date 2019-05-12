@@ -1,0 +1,48 @@
+{{define "yield"}}
+<div class="row">
+  <div class="col-md-12">
+    {{template "editGalleryForm" .}}
+  </div>
+  <div class="col-md-10 col-md-offset-1">
+    {{template "uploadImageForm" .}}
+  <br/>
+    {{template "deleteGalleryForm" .}}
+  </div>
+</div>
+{{end}}
+
+{{define "editGalleryForm"}}
+<form action="/galleries/{{.ID}}/update" method="POST" class="form-horizontal">
+  <div class="form-group">
+    <label for="title" class="col-md-1 control-label">Title</label>
+    <div class="col-md-10">
+      <input type="text" name="title" class="form-control" id="title" placeholder="Gallery title" value="{{.Title}}">
+    </div>
+    <div class="col-md-1">
+      <button type="submit" class="btn btn-defualt">Save</button>
+    </div>
+  </div>
+</form>
+{{end}}
+
+{{define "deleteGalleryForm"}}
+<form action="/galleries/{{.ID}}/delete" method="POST">
+  <button type="submit" class="btn btn-danger">
+    Delete
+  </button>
+</form>
+{{end}}
+
+{{define "uploadImageForm"}}
+<form action="/galleries/{{.ID}}/images" method="POST" enctype="multipart/form-data">
+<div class="form-group">
+  <label for="images">Upload Images</label>
+  <input type="file" multiple="multiple" id="images" name="images">
+  <p class="help-block">jpeg, jpg, png</p>
+</div>
+<div>
+  <button type="submit" class="btn btn-default">
+    Upload
+  </button>
+</div>
+{{end}}
