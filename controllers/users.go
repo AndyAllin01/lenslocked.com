@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -38,7 +37,7 @@ type SignupForm struct {
 //New renders form for new user account
 //GET/signup
 func (u *Users) New(w http.ResponseWriter, r *http.Request) {
-	u.NewView.Render(w, nil)
+	u.NewView.Render(w, r, nil)
 }
 
 //Create processes the signup form when submitted.
@@ -50,7 +49,7 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 	if err := parseForm(r, &form); err != nil {
 		log.Println(err)
 		vd.SetAlert(err)
-		u.NewView.Render(w, vd)
+		u.NewView.Render(w, r, vd)
 		return
 	}
 
@@ -61,7 +60,7 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := u.us.Create(&user); err != nil {
 		vd.SetAlert(err)
-		u.NewView.Render(w, vd)
+		u.NewView.Render(w, r, vd)
 		return
 	}
 	err := u.signIn(w, &user)
@@ -69,7 +68,7 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
-	http.Redirect(w, r, "/cookietest", http.StatusFound)
+	http.Redirect(w, r, "/galleries", http.StatusFound)
 }
 
 type LoginForm struct {
@@ -85,7 +84,7 @@ func (u *Users) Login(w http.ResponseWriter, r *http.Request) {
 	if err := parseForm(r, &form); err != nil {
 		log.Println(err)
 		vd.SetAlert(err)
-		u.LoginView.Render(w, vd)
+		u.LoginView.Render(w, r, vd)
 		return
 	}
 
@@ -97,16 +96,16 @@ func (u *Users) Login(w http.ResponseWriter, r *http.Request) {
 		default:
 			vd.SetAlert(err)
 		}
-		u.LoginView.Render(w, vd)
+		u.LoginView.Render(w, r, vd)
 		return
 	}
 	err = u.signIn(w, user)
 	if err != nil {
 		vd.SetAlert(err)
-		u.LoginView.Render(w, vd)
+		u.LoginView.Render(w, r, vd)
 		return
 	}
-	http.Redirect(w, r, "/cookietest", http.StatusFound)
+	http.Redirect(w, r, "/galleries", http.StatusFound)
 }
 
 //sign in the supplied user via cookie
@@ -133,7 +132,7 @@ func (u *Users) signIn(w http.ResponseWriter, user *models.User) error {
 	return nil
 }
 
-func (u *Users) CookieTest(w http.ResponseWriter, r *http.Request) {
+/*func (u *Users) CookieTest(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("remember_token")
 	if err != nil {
 		http.Redirect(w, r, "/login", http.StatusFound)
@@ -153,3 +152,4 @@ func (u *Users) CookieTest(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, user)
 
 }
+*/
