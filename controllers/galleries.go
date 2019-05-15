@@ -207,15 +207,18 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 		}
 		defer file.Close()
 		err = g.is.Create(gallery.ID, file, f.Filename)
-		fmt.Fprintln(w, "File location", &file, f.Filename)
-
+		if err != nil {
+			vd.SetAlert(err)
+			g.EditView.Render(w, r, vd)
+			return
+		}
 	}
-	fmt.Fprintln(w, "Files successfully uploaded", gallery.ID)
+	url, err := g.r.Get(EditGallery).URL("id", fmt.Sprintf("%v", gallery.ID))
 	if err != nil {
-		vd.SetAlert(err)
-		g.EditView.Render(w, r, vd)
+		http.Redirect(w, r, "/galleries", http.StatusFound)
 		return
 	}
+	http.Redirect(w, r, url, http.StatusFound)
 }
 
 //POST/galleries/id:/delete
@@ -261,5 +264,7 @@ func (g *Galleries) galleryByID(w http.ResponseWriter, r *http.Request) (*models
 		}
 		return nil, err
 	}
+	images, err := g.is.ByGalleryID(gallery.ID)
+	gallery.Images = images
 	return gallery, nil
 }

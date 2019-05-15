@@ -4,7 +4,14 @@
     <h1>
       {{.Title}}
     </h1>
-    <p> under construction </p>
+    <ul>
+      {{range .Images}}
+        <li>
+          {{.}}
+        </li>
+      {{end}}
+    </ul>
+<!--    <p> under construction </p>-->
   </div>
 </div>
 {{end}}
