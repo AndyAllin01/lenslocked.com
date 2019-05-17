@@ -4,14 +4,25 @@
     <h1>
       {{.Title}}
     </h1>
-    <ul>
-      {{range .Images}}
-        <li>
-          {{.}}
-        </li>
-      {{end}}
-    </ul>
-<!--    <p> under construction </p>-->
+    <hr>
   </div>
 </div>
+<div class="row">
+  {{range .ImagesSplitN 6}}
+    <div class="col-md-2">
+      {{range .}}
+        <a href="{{.}}">
+          <img src="{{.}}" class="thumbnail">
+        </a>
+      {{end}}
+    </div>
+  {{end}}
+  </div>
+</div>
+
+<style>
+  .thumbnail{
+    width: 100%
+  }
+</style>
 {{end}}

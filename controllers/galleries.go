@@ -162,7 +162,9 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request) {
 		g.New.Render(w, r, vd)
 		return
 	}
-	url, err := g.r.Get(EditGallery).URL("id", fmt.Sprintf("%v", gallery.ID))
+	//	url, err := g.r.Get(EditGallery).URL("id", fmt.Sprintf("%v", gallery.ID))
+	url, err := g.r.Get(EditGallery).URL("id", strconv.Itoa(int(gallery.ID)))
+	fmt.Println("####### CREATE URL ############", url, url.Path)
 	if err != nil {
 		//find an appropriate action here
 		http.Redirect(w, r, "/", http.StatusFound)
@@ -173,7 +175,9 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 //POST/galleries/id:/images
+//writes the selected image to the directory (but not below lenslocked?)
 func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("IMAGE UPLOAD ################################################")
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
 		return
@@ -183,8 +187,6 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Gallery not found", http.StatusNotFound)
 		return
 	}
-
-	//TODO parse a multi-part form
 
 	var vd views.Data
 	vd.Yield = gallery
@@ -206,6 +208,7 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer file.Close()
+		fmt.Println("###############################", gallery.ID, file, f.Filename)
 		err = g.is.Create(gallery.ID, file, f.Filename)
 		if err != nil {
 			vd.SetAlert(err)
@@ -213,12 +216,16 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	// MIGHT IT BE THIS \/ \/ \/
 	url, err := g.r.Get(EditGallery).URL("id", fmt.Sprintf("%v", gallery.ID))
 	if err != nil {
 		http.Redirect(w, r, "/galleries", http.StatusFound)
 		return
 	}
-	http.Redirect(w, r, url, http.StatusFound)
+	fmt.Println("url ###################### ", url)
+	fmt.Println("url path ###################### ", url.Path)
+	http.Redirect(w, r, url.Path, http.StatusFound)
 }
 
 //POST/galleries/id:/delete
@@ -264,7 +271,7 @@ func (g *Galleries) galleryByID(w http.ResponseWriter, r *http.Request) (*models
 		}
 		return nil, err
 	}
-	images, err := g.is.ByGalleryID(gallery.ID)
+	images, _ := g.is.ByGalleryID(gallery.ID)
 	gallery.Images = images
 	return gallery, nil
 }

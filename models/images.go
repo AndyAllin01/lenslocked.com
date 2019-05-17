@@ -24,15 +24,13 @@ func (is *imageService) Create(galleryID uint, r io.ReadCloser, filename string)
 	if err != nil {
 		return err
 	}
-
-	//create a destination file
-	dst, err := os.Create(path + filename)
+	// Create a destination file
+	dst, err := os.Create(filepath.Join(path, filename))
 	if err != nil {
 		return err
 	}
 	defer dst.Close()
-
-	//copy reader data to destination file
+	// Copy reader data to the destination file
 	_, err = io.Copy(dst, r)
 	if err != nil {
 		return err
@@ -42,17 +40,22 @@ func (is *imageService) Create(galleryID uint, r io.ReadCloser, filename string)
 
 func (is *imageService) ByGalleryID(galleryID uint) ([]string, error) {
 	path := is.imagePath(galleryID)
-	strings, err := filepath.Glob(path + "*")
+	strings, err := filepath.Glob(filepath.Join(path, "*"))
 	if err != nil {
 		return nil, err
+	}
+	for i := range strings {
+		strings[i] = filepath.ToSlash("/" + strings[i])
 	}
 	return strings, nil
 }
 
+// Going to need this when we know it is already made
 func (is *imageService) imagePath(galleryID uint) string {
-	return fmt.Sprintf("/images/galleries/%v/", galleryID)
+	return filepath.Join("images", "galleries", fmt.Sprintf("%v", galleryID))
 }
 
+// Use the imagePath method we just made
 func (is *imageService) mkImagePath(galleryID uint) (string, error) {
 	galleryPath := is.imagePath(galleryID)
 	err := os.MkdirAll(galleryPath, 0755)
