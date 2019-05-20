@@ -77,8 +77,3 @@ func main() {
 	http.ListenAndServe(":8080", userMw.Apply(r))
 }
 
-/*func must(err error) {
-	if err != nil {
-		panic(err)
-	}
-}*/

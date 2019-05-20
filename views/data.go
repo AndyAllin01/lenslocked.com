@@ -1,6 +1,8 @@
 package views
 
 import (
+	"log"
+
 	"lenslocked.com/models"
 )
 
