@@ -44,6 +44,7 @@ func (v *View) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (v *View) Render(w http.ResponseWriter, r *http.Request, data interface{}) {
 	w.Header().Set("Content-type", "text/html")
 	var vd Data
+	//	fmt.Println("RENDER 00000000000000000000000000 ", data)
 	switch d := data.(type) {
 	case Data:
 		vd = d

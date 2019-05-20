@@ -65,7 +65,9 @@ func (g *Galleries) Index(w http.ResponseWriter, r *http.Request) {
 }
 
 //GET/gallerries/:id
+//  VIEW
 func (g *Galleries) Show(w http.ResponseWriter, r *http.Request) {
+	//	fmt.Println("      VIEW /////////////////////////////////////")
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
 		return
@@ -77,7 +79,9 @@ func (g *Galleries) Show(w http.ResponseWriter, r *http.Request) {
 }
 
 //GET/galleries/id:/edit
+//  EDIT?
 func (g *Galleries) Edit(w http.ResponseWriter, r *http.Request) {
+	//	fmt.Println("      EDIT? /////////////////////////////////////")
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
 		return
@@ -175,9 +179,9 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 //POST/galleries/id:/images
-//writes the selected image to the directory (but not below lenslocked?)
+//writes the selected image to the directory
 func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("IMAGE UPLOAD ################################################")
+	//	fmt.Println("IMAGE UPLOAD ################################################")
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
 		return
@@ -208,7 +212,7 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer file.Close()
-		fmt.Println("###############################", gallery.ID, file, f.Filename)
+		//		fmt.Println("###############################", gallery.ID, file, f.Filename)
 		err = g.is.Create(gallery.ID, file, f.Filename)
 		if err != nil {
 			vd.SetAlert(err)
@@ -217,7 +221,6 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// MIGHT IT BE THIS \/ \/ \/
 	url, err := g.r.Get(EditGallery).URL("id", fmt.Sprintf("%v", gallery.ID))
 	if err != nil {
 		http.Redirect(w, r, "/galleries", http.StatusFound)
@@ -226,6 +229,43 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("url ###################### ", url)
 	fmt.Println("url path ###################### ", url.Path)
 	http.Redirect(w, r, url.Path, http.StatusFound)
+}
+
+//POST galleries/:id/images/:filename/delete
+
+func (g *Galleries) ImageDelete(w http.ResponseWriter, r *http.Request) {
+	gallery, err := g.galleryByID(w, r)
+	if err != nil {
+		return
+	}
+	user := context.User(r.Context())
+	if gallery.UserID != user.ID {
+		http.Error(w, "Gallery not found", http.StatusNotFound)
+		return
+	}
+	filename := mux.Vars(r)["filename"]
+
+	i := models.Image{
+		Filename:  filename,
+		GalleryID: gallery.ID,
+	}
+	var vd views.Data
+	vd.Yield = gallery
+	err = g.is.Delete(&i)
+	if err != nil {
+		var vd views.Data
+		vd.Yield = gallery
+		vd.SetAlert(err)
+		g.EditView.Render(w, r, vd)
+		return
+	}
+	url, err := g.r.Get(EditGallery).URL("id", fmt.Sprintf("%v", gallery.ID))
+	if err != nil {
+		http.Redirect(w, r, "/galleries", http.StatusFound)
+		return
+	}
+	http.Redirect(w, r, url.Path, http.StatusFound)
+	fmt.Fprintln(w, filename)
 }
 
 //POST/galleries/id:/delete
