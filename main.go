@@ -55,8 +55,12 @@ func main() {
 	r.Handle("/login", usersC.LoginView).Methods("GET")
 	r.HandleFunc("/login", usersC.Login).Methods("POST")
 
-	//image routes
+	//assets
+	assetHandler := http.FileServer(http.Dir("./assets"))
+	assetHandler = http.StripPrefix("/assets/", assetHandler)
+	r.PathPrefix("/assets/").Handler(assetHandler)
 
+	//image routes
 	imageHandler := http.FileServer(http.Dir("./images/"))
 	r.PathPrefix("/images/").Handler(http.StripPrefix("/images/", imageHandler))
 
@@ -76,4 +80,3 @@ func main() {
 	fmt.Println("STARTING SERVER ######")
 	http.ListenAndServe(":8080", userMw.Apply(r))
 }
-
