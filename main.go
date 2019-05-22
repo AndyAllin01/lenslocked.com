@@ -2,7 +2,13 @@ package main
 
 import (
 	"fmt"
+
+	"lenslocked.com/rand"
+
+	//	"math/rand"
 	"net/http"
+
+	"github.com/gorilla/csrf"
 
 	"lenslocked.com/middleware"
 
@@ -41,6 +47,12 @@ func main() {
 	staticC := controllers.NewStatic()
 	usersC := controllers.NewUsers(services.User)
 	galleriesC := controllers.NewGalleries(services.Gallery, services.Image, r)
+	isProd := false // update this to be a config variable
+	b, err := rand.Bytes(32)
+	if err!=nil{
+		panic(err)
+	}
+	csrfMw := csrf.Protect(b, csrf.Secure(isProd))
 
 	userMw := middleware.User{
 		UserService: services.User,
@@ -78,5 +90,5 @@ func main() {
 
 	r.HandleFunc("/galleries/{id:[0-9]+}", galleriesC.Show).Methods("GET").Name(controllers.ShowGallery)
 	fmt.Println("STARTING SERVER ######")
-	http.ListenAndServe(":8080", userMw.Apply(r))
+	http.ListenAndServe(":8080", csrfMw(userMw.Apply(r)))
 }
