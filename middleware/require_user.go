@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"lenslocked.com/context"
 
@@ -19,6 +20,15 @@ func (mw *User) Apply(next http.Handler) http.HandlerFunc {
 
 func (mw *User) ApplyFn(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		//if user is requesting a static asset or image, no need to look up
+		//user every time
+		if strings.HasPrefix(path, "/assets/") ||
+			strings.HasPrefix(path, "/images/") {
+			next(w, r)
+			return
+		}
+
 		//if user is logged in call
 		cookie, err := r.Cookie("remember_token")
 		if err != nil {
