@@ -11,7 +11,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 const userPwPepper = "secret-random-string-this-project"
