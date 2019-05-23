@@ -5,7 +5,6 @@ import (
 
 	"lenslocked.com/rand"
 
-	//	"math/rand"
 	"net/http"
 
 	"github.com/gorilla/csrf"
@@ -20,10 +19,18 @@ import (
 )
 
 func main() {
+	//	cfg := config.DefaultConfig()
+	//	dbCfg := config.DefaultPostgresConfig()
 	cfg := DefaultConfig()
 	dbCfg := DefaultPostgresConfig()
 	fmt.Println("RUNNING")
-	services, err := models.NewServices(dbCfg.Dialect(), dbCfg.ConnectionInfo())
+	services, err := models.NewServices(
+		models.WithGorm(dbCfg.Dialect(), dbCfg.ConnectionInfo()),
+		models.WithUser(cfg.Pepper, cfg.HMACKey),
+		models.WithLogMode(!cfg.IsProd()), //set logging if NOT production
+		models.WithGallery(),
+		models.WithImage(),
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -42,7 +49,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	csrfMw := csrf.Protect(b, csrf.Secure(cfg.IsProd))
+	csrfMw := csrf.Protect(b, csrf.Secure(cfg.IsProd()))
 
 	userMw := middleware.User{
 		UserService: services.User,

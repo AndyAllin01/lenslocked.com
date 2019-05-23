@@ -49,12 +49,13 @@ type UserService interface {
 	UserDB
 }
 
-func NewUserService(db *gorm.DB) UserService {
+func NewUserService(db *gorm.DB, pepper, hmacKey string) UserService {
 	ug := &userGorm{db}
-	hmac := hash.NewHMAC(hmacSecretKey)
-	uv := newUserValidator(ug, hmac)
+	hmac := hash.NewHMAC(hmacKey)
+	uv := newUserValidator(ug, hmac, pepper)
 	return &userService{
 		UserDB: uv,
+		pepper: pepper,
 	}
 }
 
@@ -62,6 +63,7 @@ var _ UserService = &userService{}
 
 type userService struct {
 	UserDB
+	pepper string
 }
 
 //Authenticate chceks password is correct for specified email address
@@ -70,7 +72,7 @@ func (us *userService) Authenticate(email, password string) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+userPwPepper))
+	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+us.pepper))
 
 	if err != nil {
 		switch err {
@@ -85,12 +87,13 @@ func (us *userService) Authenticate(email, password string) (*User, error) {
 
 var _ UserDB = &UserValidator{}
 
-func newUserValidator(udb UserDB, hmac hash.HMAC) *UserValidator {
+func newUserValidator(udb UserDB, hmac hash.HMAC, pepper string) *UserValidator {
 	return &UserValidator{
 		UserDB: udb,
 		hmac:   hmac,
 		//email matching regexp           bob99bob      @ email01     . com
 		emailRegex: regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,16}$`),
+		pepper:     pepper,
 	}
 }
 
@@ -98,6 +101,7 @@ type UserValidator struct {
 	UserDB
 	hmac       hash.HMAC
 	emailRegex *regexp.Regexp
+	pepper     string
 }
 
 //ByEmail normalizes the email address before calling  ByEmail
@@ -183,7 +187,7 @@ func (uv *UserValidator) bcryptPassword(user *User) error {
 	if user.Password == "" {
 		return nil
 	}
-	pwBytes := []byte(user.Password + userPwPepper) // add pepper
+	pwBytes := []byte(user.Password + uv.pepper) // add pepper
 	hashedBytes, err := bcrypt.GenerateFromPassword(pwBytes, bcrypt.DefaultCost)
 	if err != nil {
 		return err
