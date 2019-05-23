@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 
 	"lenslocked.com/rand"
@@ -19,10 +20,10 @@ import (
 )
 
 func main() {
-	//	cfg := config.DefaultConfig()
-	//	dbCfg := config.DefaultPostgresConfig()
-	cfg := DefaultConfig()
-	dbCfg := DefaultPostgresConfig()
+	boolPtr := flag.Bool("prod", false, "Set to true in production. This ensures that a .config file is provided before the app starts.")
+	flag.Parse()
+	cfg := LoadConfig(*boolPtr)
+	dbCfg := cfg.Database
 	fmt.Println("RUNNING")
 	services, err := models.NewServices(
 		models.WithGorm(dbCfg.Dialect(), dbCfg.ConnectionInfo()),
