@@ -18,16 +18,20 @@ import (
 //during setup
 func NewUsers(us models.UserService) *Users {
 	return &Users{
-		NewView:   views.NewView("bootstrap", "users/new"),
-		LoginView: views.NewView("bootstrap", "users/login"),
-		us:        us,
+		NewView:      views.NewView("bootstrap", "users/new"),
+		LoginView:    views.NewView("bootstrap", "users/login"),
+		ForgotPwView: views.NewView("bootstrap", "users/forgot_pw"),
+		ResetPwView:  views.NewView("bootstrap", "users/reset_pw"),
+		us:           us,
 	}
 }
 
 type Users struct {
-	NewView   *views.View
-	LoginView *views.View
-	us        models.UserService
+	NewView      *views.View
+	LoginView    *views.View
+	ForgotPwView *views.View
+	ResetPwView  *views.View
+	us           models.UserService
 }
 
 type SignupForm struct {
@@ -133,6 +137,70 @@ func (u *Users) Logout(w http.ResponseWriter, r *http.Request) {
 	user.Remember = token
 	u.us.Update(user)
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+type ResetPwForm struct {
+	Email    string `schema:"email"`
+	Token    string `schema:"token"`
+	Password string `schema:"password"`
+}
+
+//POST /forgot
+func (u *Users) InitiateReset(w http.ResponseWriter, r *http.Request) {
+	var vd views.Data
+	var form ResetPwForm
+	vd.Yield = &form
+	if err := parseForm(r, &form); err != nil {
+		vd.SetAlert(err)
+		u.ForgotPwView.Render(w, r, vd)
+		return
+	}
+	token, err := u.us.InitiateReset(form.Email)
+	if err != nil {
+		vd.SetAlert(err)
+		u.ForgotPwView.Render(w, r, vd)
+		return
+	}
+	_ = token
+
+	views.RedirectAlert(w, r, "/reset", http.StatusFound, views.Alert{
+		Level:   views.AlertLvlSuccess,
+		Message: "instructions for resetting email have been mailed to you",
+	})
+}
+
+//GET / reset
+func (u *Users) ResetPw(w http.ResponseWriter, r *http.Request) {
+	var vd views.Data
+	var form ResetPwForm
+	vd.Yield = &form
+	if err := parseURLParams(r, &form); err != nil {
+		vd.SetAlert(err)
+	}
+	u.ResetPwView.Render(w, r, vd)
+}
+
+//POST /reset
+func (u *Users) CompleteReset(w http.ResponseWriter, r *http.Request) {
+	var vd views.Data
+	var form ResetPwForm
+	vd.Yield = &form
+	if err := parseForm(r, &form); err != nil {
+		vd.SetAlert(err)
+		u.ResetPwView.Render(w, r, vd)
+		return
+	}
+	user, err := u.us.CompleteReset(form.Token, form.Password)
+	if err != nil {
+		vd.SetAlert(err)
+		u.ResetPwView.Render(w, r, vd)
+		return
+	}
+	u.signIn(w, user)
+	views.RedirectAlert(w, r, "/galleries", http.StatusFound, views.Alert{
+		Level:   views.AlertLvlSuccess,
+		Message: "Your password has been reset and you are now logged in",
+	})
 }
 
 //sign in the supplied user via cookie
